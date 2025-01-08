@@ -4357,21 +4357,6 @@ index 9e348a21c..86027e466 100644
  };
  
  static const char *const jp_op_class_cc[] = {
-@@ -1454,7 +1454,13 @@ static int ieee80211_chan_to_freq_global(u8 op_class, u8 chan)
- 	case 135: /* UHB channels, 80+80 MHz: 7, 23, 39.. */
- 		if (chan < 1 || chan > 233)
- 			return -1;
--		return 5950 + chan * 5;
-+#ifndef CONFIG_DRIVER_BRCM
-+		return 5940 + chan * 5;
-+#else
-+		/* New 6GHz channelization - May 2020 */
-+		if (chan == 2) return 5935;
-+		else return 5950 + chan * 5;
-+#endif /* CONFIG_DRIVER_BRCM */
- 	case 136: /* UHB channels, 20 MHz: 2 */
- 		if (chan == 2)
- 			return 5935;
 @@ -2272,7 +2278,11 @@ int center_idx_to_bw_6ghz(u8 idx)
  
  bool is_6ghz_freq(int freq)

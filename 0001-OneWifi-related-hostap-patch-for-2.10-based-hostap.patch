@@ -1,4 +1,4 @@
-From d217385ac30f0f2ba8d60862ec5e2e333541015f Mon Sep 17 00:00:00 2001
+From 2645583da7fd3fd1b8bc72bead7c87bbfbebcb9d Mon Sep 17 00:00:00 2001
 From: Amarnath Hullur Subramanyam <amarnath_hullursubramanyam@comcast.com>
 Date: Tue, 29 Oct 2024 15:17:45 -0700
 Subject: [PATCH] OneWifi related hostap patch for 2.10 based hostap.
@@ -52,7 +52,7 @@ be applied.
  src/ap/wps_hostapd.c               | 253 +++++++++-
  src/ap/wps_hostapd.h               |   7 +
  src/common/hw_features_common.c    |   4 +-
- src/common/ieee802_11_common.c     |  25 +-
+ src/common/ieee802_11_common.c     |  17 +-
  src/common/ieee802_11_defs.h       |   4 +-
  src/common/wpa_common.c            |   4 +
  src/common/wpa_common.h            |   3 +
@@ -76,7 +76,7 @@ be applied.
  src/radius/radius_das.c            |  35 +-
  src/utils/crc32.c                  |   2 +-
  src/utils/crc32.h                  |   5 +-
- src/utils/eloop.c                  | 106 ++++
+ src/utils/eloop.c                  | 105 ++++
  src/utils/eloop.h                  |   6 +
  src/utils/wpa_debug.c              |  58 ++-
  src/wps/http_server.c              |   5 +
@@ -95,7 +95,7 @@ be applied.
  tests/.DS_Store                    |   0
  wpa_supplicant/.DS_Store           |   0
  wpadebug/.DS_Store                 |   0
- 87 files changed, 3733 insertions(+), 128 deletions(-)
+ 87 files changed, 3725 insertions(+), 127 deletions(-)
  create mode 100644 Makefile.am
  create mode 100644 hostapd/Makefile.am
  create mode 100644 hs20/.DS_Store
@@ -4345,7 +4345,7 @@ index 732124f4d..fe6900764 100644
  			wpa_printf(MSG_ERROR,
  				   "Invalid control channel for 6 GHz band");
 diff --git a/src/common/ieee802_11_common.c b/src/common/ieee802_11_common.c
-index 9e348a21c..86027e466 100644
+index 9e348a21c..aa1c41100 100644
 --- a/src/common/ieee802_11_common.c
 +++ b/src/common/ieee802_11_common.c
 @@ -1179,7 +1179,7 @@ static const char *const eu_op_class_cc[] = {
@@ -4357,7 +4357,7 @@ index 9e348a21c..86027e466 100644
  };
  
  static const char *const jp_op_class_cc[] = {
-@@ -2272,7 +2278,11 @@ int center_idx_to_bw_6ghz(u8 idx)
+@@ -2272,7 +2272,11 @@ int center_idx_to_bw_6ghz(u8 idx)
  
  bool is_6ghz_freq(int freq)
  {
@@ -4369,7 +4369,7 @@ index 9e348a21c..86027e466 100644
  		return false;
  
  	if (freq == 5935)
-@@ -2297,13 +2307,24 @@ bool is_6ghz_psc_frequency(int freq)
+@@ -2297,13 +2301,24 @@ bool is_6ghz_psc_frequency(int freq)
  
  	if (!is_6ghz_freq(freq) || freq == 5935)
  		return false;
@@ -5608,7 +5608,7 @@ index dc31399be..f92a7a9f2 100644
  
  #endif /* CRC32_H */
 diff --git a/src/utils/eloop.c b/src/utils/eloop.c
-index 00b0beff0..286cce099 100644
+index 00b0beff0..ccefdf09c 100644
 --- a/src/utils/eloop.c
 +++ b/src/utils/eloop.c
 @@ -555,6 +555,8 @@ static void eloop_sock_table_dispatch(struct eloop_sock_table *readers,
@@ -5677,7 +5677,7 @@ index 00b0beff0..286cce099 100644
  #endif /* CONFIG_ELOOP_SELECT */
  
  
-@@ -962,6 +1014,58 @@ int eloop_replenish_timeout(unsigned int req_secs, unsigned int req_usecs,
+@@ -962,6 +1014,57 @@ int eloop_replenish_timeout(unsigned int req_secs, unsigned int req_usecs,
  	return -1;
  }
  
@@ -5726,7 +5726,6 @@ index 00b0beff0..286cce099 100644
 +			eloop_timeout_handler handler =
 +				timeout->handler;
 +			eloop_remove_timeout(timeout);
-+                        printf("Executing callback\n");
 +			handler(eloop_data, user_data);
 +		}
 +
@@ -5736,7 +5735,7 @@ index 00b0beff0..286cce099 100644
  
  #ifndef CONFIG_NATIVE_WINDOWS
  static void eloop_handle_alarm(int sig)
-@@ -1185,6 +1289,8 @@ void eloop_run(void)
+@@ -1185,6 +1288,8 @@ void eloop_run(void)
  			goto out;
  		}
  
@@ -6498,5 +6497,5 @@ diff --git a/wpadebug/.DS_Store b/wpadebug/.DS_Store
 new file mode 100644
 index 000000000..e69de29bb
 -- 
-2.30.2
+2.39.5
 

@@ -12,116 +12,27 @@ Test Procedure:
 
 This is a consolidated patch having the below changes from upstream
 ===================================================
-From 7452e5447764e38a648ef41424bed326cef7ee08 Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:33 -0800
-Subject: [PATCH] mbssid: Add new configuration option
-
-Add configuration option 'mbssid' used to enable multiple BSSID (MBSSID)
-and enhanced multiple BSSID advertisements (EMA) features.
-
-Reject the configuration if any of the BSSes have hidden SSID enabled.
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
-Co-developed-by: John Crispin <john@phrozen.org>
-Signed-off-by: John Crispin <john@phrozen.org>
-
-From 78d0b989956aa934603705354ca42008642c79fa Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:34 -0800
-Subject: [PATCH] mbssid: Retrieve driver capabilities
-
-Retrieve driver capabilities for the maximum number of interfaces for
-MBSSID and the maximum allowed profile periodicity for enhanced MBSSID
-advertisement.
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
-
-From 920b56322da984e5ecb344b571e3262d333c902e Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:36 -0800
-Subject: [PATCH] mbssid: Functions for building Multiple BSSID elements
-
-Add Multiple BSSID element data per IEEE Std 802.11ax-2021, 9.4.2.45.
-Split the BSSes into multiple elements if the data does not fit in
-the 255 bytes allowed for a single element.
-
-Store the total count of elements created and the offset to the start
-of each element in the provided buffer.
-
-Set the DTIM periods of non-transmitted profiles equal to the EMA
-profile periodicity if those are not a multiple of the latter already as
-recommended in IEEE Std 802.11ax-2021, Annex AA (Multiple BSSID
-configuration examples).
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
-Co-developed-by: John Crispin <john@phrozen.org>
-Signed-off-by: John Crispin <john@phrozen.org>
-
-From a004bf2cd09bda397ca8bf8f2fd33616da991ab6 Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:38 -0800
-Subject: [PATCH] mbssid: Configure parameters and element data
-
-Add helper functions to retrieve the context for the transmitting
-interfaces of the MBSSID set and the index of a given BSS.
-
-Set device parameters: BSS index and the transmitting BSS.
-
-Include Multiple BSSID elements in Beacon and Probe Response frames.
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
-Co-developed-by: John Crispin <john@phrozen.org>
-Signed-off-by: John Crispin <john@phrozen.org>
-
-From fc2e4bac5a374d10d147bf301bd1f4703d1a6ed9 Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:39 -0800
-Subject: [PATCH] mbssid: Set extended capabilities
-
-Set extended capabilities as described in IEEE Std 802.11ax-2021,
-9.4.2.26. Reset the capability bits to 0 explicitly if MBSSID and/or EMA
-is not enabled because otherwise some client devices fail to associate.
-
-Bit 80 (complete list of non-tx profiles) is set for all Probe Response
-frames, but for Beacon frames it is set only if EMA is disabled or if
-EMA profile periodicity is 1.
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
-Co-developed-by: John Crispin <john@phrozen.org>
-Signed-off-by: John Crispin <john@phrozen.org>
-
-From c5a09b051a91e02093ca2c9f493cbc6c5e8630b1 Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:37 -0800
-Subject: [PATCH] mbssid: Add Non-Inheritance element
-
-Add data per IEEE Std 802.11-2020, 9.4.2.240. Current implementation is
-added for the security and extended supported rates only.
-
-For the Extended rates element, add a new member 'xrates_supported'
-which is set to 1 only if hostapd_eid_ext_supp_rates() returns success.
-Without this change, there are cases where this function returns before
-adding the element for the transmitting interface resulting in incorrect
-addition of this element inside the MBSSID Non-Inheritance element.
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
-Co-developed-by: John Crispin <john@phrozen.org>
-Signed-off-by: John Crispin <john@phrozen.org>
-Co-developed-by: Sowmiya Sree Elavalagan <quic_ssreeela@quicinc.com>
-Signed-off-by: Sowmiya Sree Elavalagan <quic_ssreeela@quicinc.com>
-
-From 15690faada17f429e5386bf5cb6153ed47773eff Mon Sep 17 00:00:00 2001
-From: Aloka Dixit <quic_alokad@quicinc.com>
-Date: Wed, 30 Nov 2022 19:18:40 -0800
-Subject: [PATCH] mbssid: Add MBSSID Configuration element
-
-Add Multiple BSSID Configuration element data per IEEE Std
-802.11ax-2021, 9.4.2.260 when enhanced multiple BSSID advertisement
-(EMA) is enabled. This element informs the stations about the EMA
-profile periodicity of the multiple BSSID set.
-
-Signed-off-by: Aloka Dixit <quic_alokad@quicinc.com>
+Commit: 7452e5447764e38a648ef41424bed326cef7ee08
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Add new configuration option
+Commit: 78d0b989956aa934603705354ca42008642c79fa
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Retrieve driver capabilities
+Commit: 920b56322da984e5ecb344b571e3262d333c902e
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Functions for building Multiple BSSID elements
+Commit: a004bf2cd09bda397ca8bf8f2fd33616da991ab6
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Configure parameters and element data
+Commit: fc2e4bac5a374d10d147bf301bd1f4703d1a6ed9
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Set extended capabilities
+Commit: c5a09b051a91e02093ca2c9f493cbc6c5e8630b1
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Add Non-Inheritance element
+Commit: 15690faada17f429e5386bf5cb6153ed47773eff
+Author: Aloka Dixit <quic_alokad@quicinc.com>
+mbssid: Add MBSSID Configuration element
 
 Signed-off-by: Bogdan Bogush <bogdan_bogush@comcast.com>
 Change-Id: Ib8e95ec82d0eed6dfa9c317ac43af127fae7beb2

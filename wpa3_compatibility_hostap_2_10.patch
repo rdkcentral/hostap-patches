@@ -7,8 +7,8 @@ index f84b6ebc7..7cb5aa514 100644
  	     !hostapd_sae_pk_in_use(conf)) ||
  	    conf->sae_pwe == 3 ||
 -	    !wpa_key_mgmt_sae(conf->wpa_key_mgmt))
-+	    !wpa_key_mgmt_sae(conf->wpa_key_mgmt) ||
-+		!wpa_key_mgmt_sae(conf->wpa_key_mgmt_rsno))
++	    !(wpa_key_mgmt_sae(conf->wpa_key_mgmt) ||
++		wpa_key_mgmt_sae(conf->wpa_key_mgmt_rsno)))
  		return 0; /* PT not needed */
  
  	sae_deinit_pt(ssid->pt);

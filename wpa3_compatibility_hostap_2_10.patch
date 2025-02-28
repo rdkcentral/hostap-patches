@@ -1,6 +1,8 @@
-From f2b0e8bef92e8b2f0e85755307ac7987b275f03f Feb 26 22:19:13 2025
-From Amalesh Nandh K R <Amalesh_Nandh@comcast.com>
+From 59c8021ff0d2066a52f5be982ffbfff57124ec9f Mon Sep 17 00:00:00 2001
+From: AmaleshNandh29 <amalesh_nandh@comcast.com>
+Date: Sat, 1 Mar 2025 00:21:26 +0530
 Subject: [PATCH] RSN Override for WPA3 Compatibility
+
 Source: Comcast
 
 Upstream-Status: Pending
@@ -8,13 +10,27 @@ Upstream-Status: Pending
 Reason for change: Added RSNO in hostap-2.10 for WPA3-Compatibility mode.
 This patch is the 2.10 based hostap change pulled from the commit
 bce6ad856011bb057bc29d1c66bb4e2378b32a57.
+
 Signed-off-by: Amalesh_Nandh@comcast.com
 ---
+ src/ap/ap_config.c      |   3 +-
+ src/ap/ap_config.h      |   2 +
+ src/ap/ap_drv_ops.c     |  46 ++++++
+ src/ap/ap_drv_ops.h     |   3 +
+ src/ap/beacon.c         |  40 +++++
+ src/ap/ieee802_11.c     |   4 +-
+ src/ap/wpa_auth.c       |   8 +
+ src/ap/wpa_auth.h       |   4 +
+ src/ap/wpa_auth_glue.c  |  14 ++
+ src/ap/wpa_auth_ie.c    | 331 +++++++++++++++++++++++++++++++++++++++-
+ src/common/wpa_common.h |  18 +++
+ src/drivers/driver.h    |  25 +++
+ 12 files changed, 488 insertions(+), 10 deletions(-)
 
-diff --git a/source/hostap-2.10/src/ap/ap_config.c b/source/hostap-2.10/src/ap/ap_config.c
-index f84b6ebc7..7cb5aa514 100644
---- a/source/hostap-2.10/src/ap/ap_config.c
-+++ b/source/hostap-2.10/src/ap/ap_config.c
+diff --git a/src/ap/ap_config.c b/src/ap/ap_config.c
+index 74d1e2a52..70c15ae3d 100644
+--- a/src/ap/ap_config.c
++++ b/src/ap/ap_config.c
 @@ -484,7 +484,8 @@ int hostapd_setup_sae_pt(struct hostapd_bss_config *conf)
  	if ((conf->sae_pwe == 0 && !hostapd_sae_pw_id_in_use(conf) &&
  	     !hostapd_sae_pk_in_use(conf)) ||
@@ -25,10 +41,10 @@ index f84b6ebc7..7cb5aa514 100644
  		return 0; /* PT not needed */
  
  	sae_deinit_pt(ssid->pt);
-diff --git a/source/hostap-2.10/src/ap/ap_config.h b/source/hostap-2.10/src/ap/ap_config.h
-index 05cf481fb..9c98ae09e 100644
---- a/source/hostap-2.10/src/ap/ap_config.h
-+++ b/source/hostap-2.10/src/ap/ap_config.h
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index 11b6d95b1..3077feecd 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
 @@ -931,6 +931,8 @@ struct hostapd_bss_config {
  #ifdef CONFIG_DRIVER_BRCM
  	int spp_amsdu;
@@ -38,11 +54,11 @@ index 05cf481fb..9c98ae09e 100644
  };
  
  /**
-diff --git a/source/hostap-2.10/src/ap/ap_drv_ops.c b/source/hostap-2.10/src/ap/ap_drv_ops.c
-index b6bf32c49..7f6f39733 100644
---- a/source/hostap-2.10/src/ap/ap_drv_ops.c
-+++ b/source/hostap-2.10/src/ap/ap_drv_ops.c
-@@ -1132,3 +1132,49 @@ u8* hostapd_drv_mbssid_config(struct hostapd_data *hapd, u8 *eid)
+diff --git a/src/ap/ap_drv_ops.c b/src/ap/ap_drv_ops.c
+index 562ddb0c1..93aedc701 100644
+--- a/src/ap/ap_drv_ops.c
++++ b/src/ap/ap_drv_ops.c
+@@ -1114,3 +1114,49 @@ u8* hostapd_drv_mbssid_config(struct hostapd_data *hapd, u8 *eid)
  
  	return hapd->driver->get_mbssid_config(hapd->drv_priv, eid);
  }
@@ -92,10 +108,10 @@ index b6bf32c49..7f6f39733 100644
 +
 +	return hapd->driver->get_sta_auth_type(hapd->drv_priv, addr, data.key_mgmt, frame_type);
 +}
-diff --git a/source/hostap-2.10/src/ap/ap_drv_ops.h b/source/hostap-2.10/src/ap/ap_drv_ops.h
+diff --git a/src/ap/ap_drv_ops.h b/src/ap/ap_drv_ops.h
 index b2aa3150d..cc66d466d 100644
---- a/source/hostap-2.10/src/ap/ap_drv_ops.h
-+++ b/source/hostap-2.10/src/ap/ap_drv_ops.h
+--- a/src/ap/ap_drv_ops.h
++++ b/src/ap/ap_drv_ops.h
 @@ -162,6 +162,9 @@ u8* hostapd_drv_eid_mbssid(struct hostapd_data *hapd, u8 *eid, u8 *end,
  			u8 *rnr_count, u8 **rnr_offset, size_t rnr_len);
  u8* hostapd_drv_mbssid_config(struct hostapd_data *hapd, u8 *eid);
@@ -106,11 +122,11 @@ index b2aa3150d..cc66d466d 100644
  #include "drivers/driver.h"
  
  int hostapd_drv_wnm_oper(struct hostapd_data *hapd,
-diff --git a/source/hostap-2.10/src/ap/beacon.c b/source/hostap-2.10/src/ap/beacon.c
-index dd49aecca..7748da1b2 100644
---- a/source/hostap-2.10/src/ap/beacon.c
-+++ b/source/hostap-2.10/src/ap/beacon.c
-@@ -413,6 +413,36 @@ static u8 * hostapd_get_wpa_ie(struct hostapd_data *hapd, u8 *pos, size_t len)
+diff --git a/src/ap/beacon.c b/src/ap/beacon.c
+index 8f8147f16..cfadcab1b 100644
+--- a/src/ap/beacon.c
++++ b/src/ap/beacon.c
+@@ -397,6 +397,36 @@ static u8 * hostapd_get_wpa_ie(struct hostapd_data *hapd, u8 *pos, size_t len)
  	return pos + 2 + ie[1];
  }
  
@@ -147,7 +163,7 @@ index dd49aecca..7748da1b2 100644
  
  static u8 * hostapd_get_osen_ie(struct hostapd_data *hapd, u8 *pos, size_t len)
  {
-@@ -875,6 +905,11 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
+@@ -854,6 +884,11 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
  		pos += wpabuf_len(hapd->conf->vendor_elements);
  	}
  
@@ -159,7 +175,7 @@ index dd49aecca..7748da1b2 100644
  	*resp_len = pos - (u8 *) resp;
  	return (u8 *) resp;
  }
-@@ -1994,6 +2029,11 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
+@@ -1968,6 +2003,11 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
  		tailpos += wpabuf_len(hapd->conf->vendor_elements);
  	}
  
@@ -171,10 +187,10 @@ index dd49aecca..7748da1b2 100644
  	tail_len = tailpos > tail ? tailpos - tail : 0;
  
  	resp = hostapd_probe_resp_offloads(hapd, &resp_len);
-diff --git a/source/hostap-2.10/src/ap/ieee802_11.c b/source/hostap-2.10/src/ap/ieee802_11.c
-index 34406e837..41a8766a4 100644
---- a/source/hostap-2.10/src/ap/ieee802_11.c
-+++ b/source/hostap-2.10/src/ap/ieee802_11.c
+diff --git a/src/ap/ieee802_11.c b/src/ap/ieee802_11.c
+index 5132bd442..2a42dd340 100644
+--- a/src/ap/ieee802_11.c
++++ b/src/ap/ieee802_11.c
 @@ -3667,7 +3667,8 @@ static void handle_auth(struct hostapd_data *hapd,
  	       auth_alg == WLAN_AUTH_FT) ||
  #endif /* CONFIG_IEEE80211R_AP */
@@ -185,7 +201,7 @@ index 34406e837..41a8766a4 100644
  	       auth_alg == WLAN_AUTH_SAE) ||
  #endif /* CONFIG_SAE */
  #ifdef CONFIG_FILS
-@@ -5929,6 +5930,7 @@ static void handle_assoc(struct hostapd_data *hapd,
+@@ -5923,6 +5924,7 @@ static void handle_assoc(struct hostapd_data *hapd,
  #endif /* CONFIG_FILS */
  
  	if (resp >= 0)
@@ -193,10 +209,10 @@ index 34406e837..41a8766a4 100644
  		reply_res = send_assoc_resp(hapd, sta, mgmt->sa, resp, reassoc,
  					    pos, left, rssi, omit_rsnxe);
  	os_free(tmp);
-diff --git a/source/hostap-2.10/src/ap/wpa_auth.c b/source/hostap-2.10/src/ap/wpa_auth.c
+diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
 index 2ad3ecadf..bbe7900e2 100644
---- a/source/hostap-2.10/src/ap/wpa_auth.c
-+++ b/source/hostap-2.10/src/ap/wpa_auth.c
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
 @@ -393,6 +393,13 @@ void wpa_auth_set_ptk_rekey_timer(struct wpa_state_machine *sm)
  	}
  }
@@ -219,10 +235,10 @@ index 2ad3ecadf..bbe7900e2 100644
  	ft = sm->wpa == WPA_VERSION_WPA2 && wpa_key_mgmt_ft(sm->wpa_key_mgmt);
  	if (!sm->wpa_ie ||
  	    wpa_compare_rsn_ie(ft, sm->wpa_ie, sm->wpa_ie_len,
-diff --git a/source/hostap-2.10/src/ap/wpa_auth.h b/source/hostap-2.10/src/ap/wpa_auth.h
+diff --git a/src/ap/wpa_auth.h b/src/ap/wpa_auth.h
 index 07c51c4f3..53def7a61 100644
---- a/source/hostap-2.10/src/ap/wpa_auth.h
-+++ b/source/hostap-2.10/src/ap/wpa_auth.h
+--- a/src/ap/wpa_auth.h
++++ b/src/ap/wpa_auth.h
 @@ -270,6 +270,8 @@ struct wpa_auth_config {
  #ifdef CONFIG_DRIVER_BRCM
  	int spp_amsdu;
@@ -241,10 +257,10 @@ index 07c51c4f3..53def7a61 100644
  };
  
  struct wpa_authenticator * wpa_init(const u8 *addr,
-diff --git a/source/hostap-2.10/src/ap/wpa_auth_glue.c b/source/hostap-2.10/src/ap/wpa_auth_glue.c
+diff --git a/src/ap/wpa_auth_glue.c b/src/ap/wpa_auth_glue.c
 index aedac415e..9976cf955 100644
---- a/source/hostap-2.10/src/ap/wpa_auth_glue.c
-+++ b/source/hostap-2.10/src/ap/wpa_auth_glue.c
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
 @@ -220,6 +220,8 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
  #endif /* CONFIG_PASN */
  
@@ -280,10 +296,10 @@ index aedac415e..9976cf955 100644
  	};
  	const u8 *wpa_ie;
  	size_t wpa_ie_len;
-diff --git a/source/hostap-2.10/src/ap/wpa_auth_ie.c b/source/hostap-2.10/src/ap/wpa_auth_ie.c
-index 7d6b19c73..93bfa0b41 100644
---- a/source/hostap-2.10/src/ap/wpa_auth_ie.c
-+++ b/source/hostap-2.10/src/ap/wpa_auth_ie.c
+diff --git a/src/ap/wpa_auth_ie.c b/src/ap/wpa_auth_ie.c
+index 7d6b19c73..0d6acbe66 100644
+--- a/src/ap/wpa_auth_ie.c
++++ b/src/ap/wpa_auth_ie.c
 @@ -486,6 +486,303 @@ static u8 * wpa_write_osen(struct wpa_auth_config *conf, u8 *eid)
  	return eid;
  }
@@ -639,10 +655,10 @@ index 7d6b19c73..93bfa0b41 100644
  	if (!key_mgmt) {
  		wpa_printf(MSG_DEBUG, "Invalid WPA key mgmt (0x%x) from "
  			   MACSTR, data.key_mgmt, MAC2STR(sm->addr));
-diff --git a/source/hostap-2.10/src/common/wpa_common.h b/source/hostap-2.10/src/common/wpa_common.h
+diff --git a/src/common/wpa_common.h b/src/common/wpa_common.h
 index afbba11eb..9cbaef4e2 100644
---- a/source/hostap-2.10/src/common/wpa_common.h
-+++ b/source/hostap-2.10/src/common/wpa_common.h
+--- a/src/common/wpa_common.h
++++ b/src/common/wpa_common.h
 @@ -136,6 +136,8 @@ WPA_CIPHER_BIP_CMAC_256)
  #define WFA_KEY_DATA_DPP RSN_SELECTOR(0x50, 0x6f, 0x9a, 0x21)
  
@@ -673,11 +689,11 @@ index afbba11eb..9cbaef4e2 100644
 +}STRUCT_PACKED;
 +
  #endif /* WPA_COMMON_H */
-diff --git a/source/hostap-2.10/src/drivers/driver.h b/source/hostap-2.10/src/drivers/driver.h
-index 68c15ff71..5c8b17ee5 100644
---- a/source/hostap-2.10/src/drivers/driver.h
-+++ b/source/hostap-2.10/src/drivers/driver.h
-@@ -4740,6 +4740,19 @@ struct wpa_driver_ops {
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index 1b27f5fa9..be4012e86 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -4716,6 +4716,19 @@ struct wpa_driver_ops {
  			unsigned int frame_stype, u8 elem_count,
  			u8 **elem_offset);
  	u8* (*get_mbssid_config)(void *priv, u8 *eid);
@@ -697,7 +713,7 @@ index 68c15ff71..5c8b17ee5 100644
  };
  
  /**
-@@ -5403,6 +5416,18 @@ enum sta_connect_fail_reason_codes {
+@@ -5379,6 +5392,18 @@ enum sta_connect_fail_reason_codes {
  	STA_CONNECT_FAIL_REASON_ASSOC_NO_RESP_RECEIVED = 7,
  };
  
@@ -716,3 +732,6 @@ index 68c15ff71..5c8b17ee5 100644
  /**
   * union wpa_event_data - Additional data for wpa_supplicant_event() calls
   */
+-- 
+2.31.1.windows.1
+

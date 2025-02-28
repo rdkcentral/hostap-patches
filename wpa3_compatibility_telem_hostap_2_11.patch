@@ -7,9 +7,6 @@ Reason for change: To add WPA3-Personal-Compatibility mode telemetry changes in 
 This patch is the 2.11 based hostap change pulled from the commit
 052e0dec4dd8b265a72c93e2f8c4028ad6febbf8
 ---
-recipes-ccsp/rdk-wifi-libhostap/files/2.11/wpa3_compatibility_telem_hostap_2_11.patch				193 +++++++++
-recipes-ccsp/rdk-wifi-libhostap/rdk-wifi-libhostap.bb				1 +
-2 files changed, 194 insertions(+), 0 deletions(-)
 
 diff --git a/source/hostap-2.11/src/ap/ap_drv_ops.c b/source/hostap-2.11/src/ap/ap_drv_ops.c
 index 3fd2a52..0ed19ec 100644

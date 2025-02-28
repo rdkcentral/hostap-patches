@@ -7,9 +7,6 @@ Reason for change: Added RSNO in hostap-2.10 for WPA3-Compatibility mode.
 This patch is the 2.10 based hostap change pulled from the commit
 bce6ad856011bb057bc29d1c66bb4e2378b32a57.
 ---
-recipes-ccsp/rdk-wifi-libhostap/files/2.10/wpa3_compatibility_hostap_2_10.patch				705 +++++++++++++++++++++++++++++++++++++++++++++++++++
-recipes-ccsp/rdk-wifi-libhostap/rdk-wifi-libhostap.bb										2   +
-2 files changed, 707 insertions(+), 0 deletions(-)
 
 diff --git a/source/hostap-2.10/src/ap/ap_config.c b/source/hostap-2.10/src/ap/ap_config.c
 index f84b6ebc7..7cb5aa514 100644

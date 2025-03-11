@@ -1,8 +1,11 @@
+<<<<<<< HEAD
 ##########################################
 From: Srijeyarankesh_JS@comcast.com
 Date: Mar 11, 2025 10:58 AM
 Source: Comcast
 ##########################################
+=======
+>>>>>>> b5b908b4ea91985642b2b35e1c6da1c547e91e5f
 diff --git a/source/hostap-2.10/hostapd/config_file.c b/source/hostap-2.10/hostapd/config_file.c
 index f616e3d..587c022 100644
 --- a/source/hostap-2.10/hostapd/config_file.c

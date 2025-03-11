@@ -1,12 +1,35 @@
-##########################################
-From: Srijeyarankesh_JS@comcast.com
-Date: Mar 11, 2025 10:58 AM
-Source: Comcast
-##########################################
-diff --git a/source/hostap-2.10/hostapd/config_file.c b/source/hostap-2.10/hostapd/config_file.c
-index f616e3d..587c022 100644
---- a/source/hostap-2.10/hostapd/config_file.c
-+++ b/source/hostap-2.10/hostapd/config_file.c
+From 3d969802e66d8f0043243fac6a34f9ad980bc869 Mon Sep 17 00:00:00 2001
+From: sjs889 <58742948+Srijeyarankesh@users.noreply.github.com>
+Date: Tue, 11 Mar 2025 09:15:38 +0000
+Subject: [PATCH] RDKB-58414: Dynamically update NAS
+
+Impacted Platforms:
+All OneWifi Platforms
+
+Reason for change:We must dynamically update NAS IP to be in accordance
+with RADIUS IP Family.
+
+Test Procedure: Enable Hotspot VAPs and connect clients. Simultaneously
+take erouter0 PCAPs. Check if NAS IP is updated properly as per RADIUS
+IP Family.
+
+Risks: Low
+
+Change-Id: I8f33dc2d45bef2dc10581c88d6b812a49f02dd9d
+Signed-off-by:Srijeyarankesh_JS@comcast.com
+---
+ hostapd/config_file.c      |   2 +-
+ src/ap/ap_config.h         |   1 -
+ src/ap/hostapd.c           |   8 +--
+ src/ap/ieee802_1x.c        |   8 +--
+ src/radius/radius_client.c | 100 ++----------------------------------
+ src/radius/radius_client.h | 102 ++++++++++++++++++++++++++++++++++++-
+ 6 files changed, 114 insertions(+), 107 deletions(-)
+
+diff --git a/hostapd/config_file.c b/hostapd/config_file.c
+index f616e3daa..587c0222a 100644
+--- a/hostapd/config_file.c
++++ b/hostapd/config_file.c
 @@ -2688,7 +2688,7 @@ static int hostapd_config_fill(struct hostapd_config *conf,
  		wpa_printf(MSG_INFO, "DEPRECATED: iapp_interface not used");
  #endif /* CONFIG_IAPP */
@@ -16,10 +39,10 @@ index f616e3d..587c022 100644
  			wpa_printf(MSG_ERROR,
  				   "Line %d: invalid IP address '%s'",
  				   line, pos);
-diff --git a/source/hostap-2.10/src/ap/ap_config.h b/source/hostap-2.10/src/ap/ap_config.h
-index 9c98ae0..fa9966c 100644
---- a/source/hostap-2.10/src/ap/ap_config.h
-+++ b/source/hostap-2.10/src/ap/ap_config.h
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
+index 3077feecd..36a4335b6 100644
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
 @@ -310,7 +310,6 @@ struct hostapd_bss_config {
  	char *eap_sim_db;
  	unsigned int eap_sim_db_timeout;
@@ -28,10 +51,10 @@ index 9c98ae0..fa9966c 100644
  	char *nas_identifier;
  	struct hostapd_radius_servers *radius;
  	int acct_interim_interval;
-diff --git a/source/hostap-2.10/src/ap/hostapd.c b/source/hostap-2.10/src/ap/hostapd.c
-index 75ba6d0..32365b2 100644
---- a/source/hostap-2.10/src/ap/hostapd.c
-+++ b/source/hostap-2.10/src/ap/hostapd.c
+diff --git a/src/ap/hostapd.c b/src/ap/hostapd.c
+index ff39e9ddc..ac935ad7d 100644
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
 @@ -777,8 +777,8 @@ static int hostapd_das_nas_mismatch(struct hostapd_data *hapd,
  	}
  
@@ -54,10 +77,10 @@ index 75ba6d0..32365b2 100644
  	     != 0)) {
  		wpa_printf(MSG_DEBUG, "RADIUS DAS: NAS-IPv6-Address mismatch");
  		return 1;
-diff --git a/source/hostap-2.10/src/ap/ieee802_1x.c b/source/hostap-2.10/src/ap/ieee802_1x.c
-index 8fd73a2..6a3cbf3 100644
---- a/source/hostap-2.10/src/ap/ieee802_1x.c
-+++ b/source/hostap-2.10/src/ap/ieee802_1x.c
+diff --git a/src/ap/ieee802_1x.c b/src/ap/ieee802_1x.c
+index b8d177c3d..9d0d5b0dd 100644
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
 @@ -539,9 +539,9 @@ int add_common_radius_attr(struct hostapd_data *hapd,
  
  	if (!hostapd_config_get_radius_attr(req_attr,
@@ -82,10 +105,10 @@ index 8fd73a2..6a3cbf3 100644
  		wpa_printf(MSG_ERROR, "Could not add NAS-IPv6-Address");
  		return -1;
  	}
-diff --git a/source/hostap-2.10/src/radius/radius_client.c b/source/hostap-2.10/src/radius/radius_client.c
-index bb730f4..fe56cd9 100644
---- a/source/hostap-2.10/src/radius/radius_client.c
-+++ b/source/hostap-2.10/src/radius/radius_client.c
+diff --git a/src/radius/radius_client.c b/src/radius/radius_client.c
+index bb730f482..ab935ff78 100644
+--- a/src/radius/radius_client.c
++++ b/src/radius/radius_client.c
 @@ -153,102 +153,6 @@ struct radius_msg_list {
  };
  
@@ -193,8 +216,8 @@ index bb730f4..fe56cd9 100644
  			wpa_printf(MSG_DEBUG, "RADIUS local address: %s:%u",
  				   inet_ntoa(claddr.sin_addr),
  				   ntohs(claddr.sin_port));
-+			radius->conf->own_ip_addr.af = AF_INET;
-+			radius->conf->own_ip_addr.u.v4 = claddr.sin_addr;
++			conf->own_ip_addr.af = AF_INET;
++			conf->own_ip_addr.u.v4 = claddr.sin_addr;
  		}
  		break;
  #ifdef CONFIG_IPV6
@@ -202,32 +225,33 @@ index bb730f4..fe56cd9 100644
  				   inet_ntop(AF_INET6, &claddr6.sin6_addr,
  					     abuf, sizeof(abuf)),
  				   ntohs(claddr6.sin6_port));
-+			radius->conf->own_ip_addr.af = AF_INET6;
-+			radius->conf->own_ip_addr.u.v6 = claddr6.sin6_addr;
++			conf->own_ip_addr.af = AF_INET6;
++			conf->own_ip_addr.u.v6 = claddr6.sin6_addr;
  		}
  		break;
  	}
-diff --git a/source/hostap-2.10/src/radius/radius_client.h b/source/hostap-2.10/src/radius/radius_client.h
-index 679ca3d..18722a8 100644
---- a/source/hostap-2.10/src/radius/radius_client.h
-+++ b/source/hostap-2.10/src/radius/radius_client.h
+diff --git a/src/radius/radius_client.h b/src/radius/radius_client.h
+index 679ca3d89..6a15c2d23 100644
+--- a/src/radius/radius_client.h
++++ b/src/radius/radius_client.h
 @@ -170,6 +170,11 @@ struct hostapd_radius_servers {
  	 */
  	int msg_dumps;
  
 +	/**
 +     * own_ip_addr - used to store the NAS IP Address and it's IP family
-+	 */
-+	 struct hostapd_ip_addr own_ip_addr;
++    */
++    struct hostapd_ip_addr own_ip_addr;
 +
  	/**
  	 * client_addr - Client (local) address to use if force_client_addr
  	 */
-@@ -242,7 +247,101 @@ typedef enum {
+@@ -242,7 +247,102 @@ typedef enum {
  	RADIUS_RX_INVALID_AUTHENTICATOR
  } RadiusRxResult;
  
 -struct radius_client_data;
++
 +/**
 + * struct radius_client_data - Internal RADIUS client data
 + *
@@ -326,3 +350,6 @@ index 679ca3d..18722a8 100644
  
  int radius_client_register(struct radius_client_data *radius,
  			   RadiusType msg_type,
+-- 
+2.25.1
+

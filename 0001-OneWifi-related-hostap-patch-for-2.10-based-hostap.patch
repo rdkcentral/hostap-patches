@@ -1,4 +1,4 @@
-From 2645583da7fd3fd1b8bc72bead7c87bbfbebcb9d Mon Sep 17 00:00:00 2001
+From d42be1dc11a6c922aa85e4db39e73a8ff308772a Mon Sep 17 00:00:00 2001
 From: Amarnath Hullur Subramanyam <amarnath_hullursubramanyam@comcast.com>
 Date: Tue, 29 Oct 2024 15:17:45 -0700
 Subject: [PATCH] OneWifi related hostap patch for 2.10 based hostap.
@@ -31,7 +31,7 @@ be applied.
  src/ap/dfs.h                       |  11 +
  src/ap/drv_callbacks.c             |  22 +-
  src/ap/gas_serv.c                  |  15 +-
- src/ap/greylist.c                  | 766 +++++++++++++++++++++++++++++
+ src/ap/greylist.c                  | 767 +++++++++++++++++++++++++++++
  src/ap/greylist.h                  |  25 +
  src/ap/hostapd.c                   |  82 ++-
  src/ap/hostapd.h                   |  22 +-
@@ -95,7 +95,7 @@ be applied.
  tests/.DS_Store                    |   0
  wpa_supplicant/.DS_Store           |   0
  wpadebug/.DS_Store                 |   0
- 87 files changed, 3725 insertions(+), 127 deletions(-)
+ 87 files changed, 3726 insertions(+), 127 deletions(-)
  create mode 100644 Makefile.am
  create mode 100644 hostapd/Makefile.am
  create mode 100644 hs20/.DS_Store
@@ -1810,10 +1810,10 @@ index 90f15778b..408d704e0 100644
  #endif /* CONFIG_DPP */
 diff --git a/src/ap/greylist.c b/src/ap/greylist.c
 new file mode 100644
-index 000000000..e694a048d
+index 000000000..9990a82e2
 --- /dev/null
 +++ b/src/ap/greylist.c
-@@ -0,0 +1,766 @@
+@@ -0,0 +1,767 @@
 +/*
 + * hostapd / RADIUS Greylist Access Control
 + *
@@ -1838,6 +1838,7 @@ index 000000000..e694a048d
 +#include "utils/common.h"
 +#include "utils/eloop.h"
 +#include "greylist.h"
++#include <fcntl.h>
 +
 +/* Timeout value from the client association time for deleting the
 + * mac entry from greylist_mac.txt, and deleting the mac from access

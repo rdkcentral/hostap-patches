@@ -1,0 +1,106 @@
+From 4a9bd14c3a97a82ae8d25ac562f5bcc893386afe Mon Sep 17 00:00:00 2001
+From: Aniket0606 <patelaniket488@gmail.com>
+Date: Tue, 22 Apr 2025 18:20:36 -0700
+Subject: [PATCH] Patch to address connectivity path via wpa_supplicant
+
+---
+ src/Makefile.am         | 16 ++++++++++++++++
+ src/drivers/driver.h    |  2 ++
+ wpa_supplicant/events.c |  4 ++--
+ wpa_supplicant/sme.c    |  2 +-
+ wpa_supplicant/sme.h    |  4 +++-
+ 5 files changed, 24 insertions(+), 4 deletions(-)
+
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 0044634df..24a5deb18 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -79,6 +79,22 @@ libhostap_la_SOURCES += ap/eth_p_oui.c
+ libhostap_la_SOURCES += ap/ctrl_iface_ap.c
+ libhostap_la_SOURCES += ap/greylist.c
+ libhostap_la_SOURCES += ap/wnm_ap.c
++libhostap_la_SOURCES += ../wpa_supplicant/sme.c
++libhostap_la_SOURCES += ../wpa_supplicant/wmm_ac.c
++libhostap_la_SOURCES += ../wpa_supplicant/rrm_test.c
++libhostap_la_SOURCES += ../wpa_supplicant/wps_supplicant.c
++libhostap_la_SOURCES += ../wpa_supplicant/wpas_glue.c
++libhostap_la_SOURCES += ../wpa_supplicant/interworking.c
++libhostap_la_SOURCES += ../wpa_supplicant/op_classes.c
++libhostap_la_SOURCES += ../wpa_supplicant/events.c
++libhostap_la_SOURCES += ../wpa_supplicant/hs20_supplicant.c
++libhostap_la_SOURCES += ../wpa_supplicant/scan.c
++libhostap_la_SOURCES += ../wpa_supplicant/bss.c
++libhostap_la_SOURCES += ../wpa_supplicant/notify.c
++libhostap_la_SOURCES += ../wpa_supplicant/wpa_supplicant.c
++libhostap_la_SOURCES += ../wpa_supplicant/robust_av.c
++libhostap_la_SOURCES += ../wpa_supplicant/bssid_ignore.c
++libhostap_la_SOURCES += utils/bitfield.c
+ 
+ libhostap_la_SOURCES += radius/radius.c
+ libhostap_la_SOURCES += radius/radius_client.c
+diff --git a/src/drivers/driver.h b/src/drivers/driver.h
+index be4012e86..934704e7d 100644
+--- a/src/drivers/driver.h
++++ b/src/drivers/driver.h
+@@ -6253,6 +6253,8 @@ union wpa_event_data {
+ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
+ 			  union wpa_event_data *data);
+ 
++void wpa_supplicant_event_wpa(void *ctx, enum wpa_event_type event,
++              union wpa_event_data *data);
+ /**
+  * wpa_supplicant_event_global - Report a driver event for wpa_supplicant
+  * @ctx: Context pointer (wpa_s); this is the ctx variable registered
+diff --git a/wpa_supplicant/events.c b/wpa_supplicant/events.c
+index 0ce3d8fb0..5bc7a55ae 100644
+--- a/wpa_supplicant/events.c
++++ b/wpa_supplicant/events.c
+@@ -4952,7 +4952,7 @@ static void wpas_event_unprot_beacon(struct wpa_supplicant *wpa_s,
+ }
+ 
+ 
+-void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
++void wpa_supplicant_event_wpa(void *ctx, enum wpa_event_type event,
+ 			  union wpa_event_data *data)
+ {
+ 	struct wpa_supplicant *wpa_s = ctx;
+@@ -5811,7 +5811,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
+ }
+ 
+ 
+-void wpa_supplicant_event_global(void *ctx, enum wpa_event_type event,
++void wpa_supplicant_event_global_wpa(void *ctx, enum wpa_event_type event,
+ 				 union wpa_event_data *data)
+ {
+ 	struct wpa_supplicant *wpa_s;
+diff --git a/wpa_supplicant/sme.c b/wpa_supplicant/sme.c
+index be023c701..79e58e998 100644
+--- a/wpa_supplicant/sme.c
++++ b/wpa_supplicant/sme.c
+@@ -320,7 +320,7 @@ static void sme_auth_handle_rrm(struct wpa_supplicant *wpa_s,
+ }
+ 
+ 
+-static void sme_send_authentication(struct wpa_supplicant *wpa_s,
++void sme_send_authentication(struct wpa_supplicant *wpa_s,
+ 				    struct wpa_bss *bss, struct wpa_ssid *ssid,
+ 				    int start)
+ {
+diff --git a/wpa_supplicant/sme.h b/wpa_supplicant/sme.h
+index c797d2e9e..cd068db01 100644
+--- a/wpa_supplicant/sme.h
++++ b/wpa_supplicant/sme.h
+@@ -43,7 +43,9 @@ void sme_external_auth_trigger(struct wpa_supplicant *wpa_s,
+ 			       union wpa_event_data *data);
+ void sme_external_auth_mgmt_rx(struct wpa_supplicant *wpa_s,
+ 			       const u8 *auth_frame, size_t len);
+-
++void sme_send_authentication(struct wpa_supplicant *wpa_s,
++                    struct wpa_bss *bss, struct wpa_ssid *ssid,
++                    int start);
+ #else /* CONFIG_SME */
+ 
+ static inline void sme_authenticate(struct wpa_supplicant *wpa_s,
+-- 
+2.17.1
+

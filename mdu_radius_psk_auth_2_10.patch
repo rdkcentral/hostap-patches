@@ -15,7 +15,7 @@ Subject: [PATCH] Actual second needed commit
  source/hostap-2.10/src/radius/radius.h      |   2 +
  9 files changed, 140 insertions(+), 148 deletions(-)
 
-diff --git a/source/hostap-2.10/src/ap/ap_config.h b/source/hostap-2.10/src/ap/ap_config.h
+diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
 index fa9966c..ff7d9dd 100644
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
@@ -36,7 +36,7 @@ index fa9966c..ff7d9dd 100644
  #ifdef CONFIG_RADIUS_TEST
  	char *dump_msk_file;
  #endif /* CONFIG_RADIUS_TEST */
-diff --git a/source/hostap-2.10/src/ap/ieee802_11_auth.c b/source/hostap-2.10/src/ap/ieee802_11_auth.c
+diff --git a/src/ap/ieee802_11_auth.c b/src/ap/ieee802_11_auth.c
 index 4277d82..d38721d 100644
 --- a/src/ap/ieee802_11_auth.c
 +++ b/src/ap/ieee802_11_auth.c
@@ -273,7 +273,7 @@ index 4277d82..d38721d 100644
  	return 0;
  }
  
-diff --git a/source/hostap-2.10/src/ap/ieee802_1x.c b/source/hostap-2.10/src/ap/ieee802_1x.c
+diff --git a/src/ap/ieee802_1x.c b/src/ap/ieee802_1x.c
 index 6a3cbf3..32484e4 100644
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
@@ -384,7 +384,7 @@ index 6a3cbf3..32484e4 100644
  	}
  #endif /* FEATURE_SUPPORT_RADIUSGREYLIST */
  	if (radius_client_send(hapd->radius, msg, RADIUS_AUTH, sta->addr) < 0)
-diff --git a/source/hostap-2.10/src/ap/ieee802_1x.h b/source/hostap-2.10/src/ap/ieee802_1x.h
+diff --git a/src/ap/ieee802_1x.h b/src/ap/ieee802_1x.h
 index aaf0455..10469f8 100644
 --- a/src/ap/ieee802_1x.h
 +++ b/src/ap/ieee802_1x.h
@@ -397,10 +397,10 @@ index aaf0455..10469f8 100644
  int add_sqlite_radius_attr(struct hostapd_data *hapd, struct sta_info *sta,
  			   struct radius_msg *msg, int acct);
  void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
-diff --git a/source/hostap-2.10/src/ap/wpa_auth.c b/source/hostap-2.10/src/ap/wpa_auth.c
+diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
 index a87d973..ba282b8 100644
---- a/source/hostap-2.10/src/ap/wpa_auth.c
-+++ b/source/hostap-2.10/src/ap/wpa_auth.c
+--- a/src/ap/wpa_auth.c
++++ b/src/ap/wpa_auth.c
 @@ -3001,6 +3001,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
  	struct wpa_eapol_ie_parse kde;
  	int vlan_id = 0;
@@ -477,7 +477,7 @@ index a87d973..ba282b8 100644
 +    sm->radius_psk_processed = 1;
 +	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);	
  }
-diff --git a/source/hostap-2.10/src/ap/wpa_auth.h b/source/hostap-2.10/src/ap/wpa_auth.h
+diff --git a/src/ap/wpa_auth.h b/src/ap/wpa_auth.h
 index 53def7a..f4993d4 100644
 --- a/src/ap/wpa_auth.h
 +++ b/src/ap/wpa_auth.h
@@ -490,10 +490,10 @@ index 53def7a..f4993d4 100644
  	bool radius_psk;
  };
  
-diff --git a/source/hostap-2.10/src/ap/wpa_auth_glue.c b/source/hostap-2.10/src/ap/wpa_auth_glue.c
+diff --git a/src/ap/wpa_auth_glue.c b/src/ap/wpa_auth_glue.c
 index 9976cf9..5e50901 100644
---- a/source/hostap-2.10/src/ap/wpa_auth_glue.c
-+++ b/source/hostap-2.10/src/ap/wpa_auth_glue.c
+--- a/src/ap/wpa_auth_glue.c
++++ b/src/ap/wpa_auth_glue.c
 @@ -218,7 +218,7 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
  	wconf->force_kdk_derivation = conf->force_kdk_derivation;
  #endif /* CONFIG_TESTING_OPTIONS */
@@ -511,10 +511,10 @@ index 9976cf9..5e50901 100644
  	hostapd_wpa_auth_conf(hapd->conf, hapd->iconf, &_conf);
  	_conf.msg_ctx = hapd->msg_ctx;
  	if (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_EAPOL_TX_STATUS)
-diff --git a/source/hostap-2.10/src/ap/wpa_auth_i.h b/source/hostap-2.10/src/ap/wpa_auth_i.h
+diff --git a/src/ap/wpa_auth_i.h b/src/ap/wpa_auth_i.h
 index 17cb5a2..23b3025 100644
---- a/source/hostap-2.10/src/ap/wpa_auth_i.h
-+++ b/source/hostap-2.10/src/ap/wpa_auth_i.h
+--- a/src/ap/wpa_auth_i.h
++++ b/src/ap/wpa_auth_i.h
 @@ -90,6 +90,7 @@ struct wpa_state_machine {
  	unsigned int update_snonce:1;
  	unsigned int alt_snonce_valid:1;
@@ -523,10 +523,10 @@ index 17cb5a2..23b3025 100644
  #ifdef CONFIG_IEEE80211R_AP
  	unsigned int ft_completed:1;
  	unsigned int pmk_r1_name_valid:1;
-diff --git a/source/hostap-2.10/src/radius/radius.h b/source/hostap-2.10/src/radius/radius.h
+diff --git a/src/radius/radius.h b/src/radius/radius.h
 index 8ee3e03..b24c3dd 100644
---- a/source/hostap-2.10/src/radius/radius.h
-+++ b/source/hostap-2.10/src/radius/radius.h
+--- a/src/radius/radius.h
++++ b/src/radius/radius.h
 @@ -242,7 +242,9 @@ enum {
  	RADIUS_VENDOR_ATTR_COMCAST_AP_SNR = 136,
  	RADIUS_VENDOR_ATTR_COMCAST_REPLY_MESSAGE = 137,

@@ -1,22 +1,22 @@
-From 2ae5e16e7e2d4d73fca63c625404b93bf8bdb976 Mon Sep 17 00:00:00 2001
-From: sjs889 <Srijeyarankesh_JS@comcast.com>
-Date: Wed, 11 Jun 2025 07:52:05 +0000
-Subject: [PATCH] Actual second needed commit
+From ca0d86d721a474a09a18365fe7415e6cb148ef91 Mon Sep 17 00:00:00 2001
+From: Srijeyarankesh <Srijeyarankesh_JS@comcast.com>
+Date: Wed, 11 Jun 2025 11:16:44 +0100
+Subject: [PATCH] mdu_radius_psk_auth_2_10.patch
 
 ---
  src/ap/ap_config.h       |   3 +
- src/ap/ieee802_11_auth.c | 147 ++++++--------------
- src/ap/ieee802_1x.c      |  93 ++++++++-----
- src/ap/ieee802_1x.h      |   2 +
- src/ap/wpa_auth.c        |  35 ++++-
+ src/ap/ieee802_11_auth.c | 138 ++++++++++++---------------------------
+ src/ap/ieee802_1x.c      |  95 +++++++++++++++++----------
+ src/ap/ieee802_1x.h      |   1 +
+ src/ap/wpa_auth.c        |  26 +++++++-
  src/ap/wpa_auth.h        |   2 +-
- src/ap/wpa_auth_glue.c   |   3 +-
+ src/ap/wpa_auth_glue.c   |   2 +-
  src/ap/wpa_auth_i.h      |   1 +
  src/radius/radius.h      |   2 +
- 9 files changed, 140 insertions(+), 148 deletions(-)
+ 9 files changed, 133 insertions(+), 137 deletions(-)
 
 diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h
-index fa9966c..ff7d9dd 100644
+index 36a4335b6..a7b2a887c 100644
 --- a/src/ap/ap_config.h
 +++ b/src/ap/ap_config.h
 @@ -495,6 +495,7 @@ struct hostapd_bss_config {
@@ -30,55 +30,29 @@ index fa9966c..ff7d9dd 100644
 @@ -664,6 +665,8 @@ struct hostapd_bss_config {
  	u8 wps_rf_bands; /* RF bands for WPS (WPS_RF_*) */
  
-    int connected_building_avp;
-+   bool mdu;
-+   int speed_tier;
+ 	int connected_building_avp;
++	bool mdu;
++	int speed_tier;
  #ifdef CONFIG_RADIUS_TEST
  	char *dump_msk_file;
  #endif /* CONFIG_RADIUS_TEST */
 diff --git a/src/ap/ieee802_11_auth.c b/src/ap/ieee802_11_auth.c
-index 4277d82..d38721d 100644
+index 4277d82cb..245acd99d 100644
 --- a/src/ap/ieee802_11_auth.c
 +++ b/src/ap/ieee802_11_auth.c
-@@ -117,7 +117,7 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
- {
- 	struct radius_msg *msg;
- 	char buf[128];
--
-+    
- 	query->radius_id = radius_client_get_id(hapd->radius);
- 	msg = radius_msg_new(RADIUS_CODE_ACCESS_REQUEST, query->radius_id);
- 	if (!msg)
-@@ -169,6 +169,11 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
+@@ -168,6 +168,11 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
+ 		wpa_printf(MSG_DEBUG, "Could not add WLAN-AKM-Suite");
  		goto fail;
  	}
- 
++	
 +	if (hapd->conf->mdu && query->radius_psk) {
 +		struct sta_info *sta = ap_get_sta(hapd, addr);
 +		add_comcast_radius_attributes(hapd, msg, sta);
 +	}
-+
+ 
  	if (query->anonce &&
  	    !radius_msg_add_ext_vs(msg, RADIUS_ATTR_EXT_VENDOR_SPECIFIC_5,
- 				   RADIUS_VENDOR_ID_FREERADIUS,
-@@ -470,14 +475,13 @@ free_pass:
- 
- 
- /**
-- * hostapd_acl_recv_radius - Process incoming RADIUS Authentication messages
-+ * hostapd_acl_recv_radius - Process incoming RADIUS Authentication messages for PSK
-  * @msg: RADIUS response message
-  * @req: RADIUS request message
-  * @shared_secret: RADIUS shared secret
-  * @shared_secret_len: Length of shared_secret in octets
-  * @data: Context data (struct hostapd_data *)
-- * Returns: RADIUS_RX_PROCESSED if RADIUS message was a reply to ACL query (and
-- * was processed here) or RADIUS_RX_UNKNOWN if not.
-+ * Returns: RADIUS_RX_PROCESSED if RADIUS message was a PSK query reply
-  */
- static RadiusRxResult
- hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
-@@ -489,7 +493,9 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
+@@ -489,7 +494,9 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
  	struct hostapd_cached_radius_acl *cache;
  	struct radius_sta *info;
  	struct radius_hdr *hdr = radius_msg_get_hdr(msg);
@@ -88,7 +62,7 @@ index 4277d82..d38721d 100644
  	query = hapd->acl_queries;
  	prev = NULL;
  	while (query) {
-@@ -502,134 +508,71 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
+@@ -502,134 +509,71 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
  		return RADIUS_RX_UNKNOWN;
  
  	wpa_printf(MSG_DEBUG,
@@ -257,30 +231,15 @@ index 4277d82..d38721d 100644
  	if (!prev)
  		hapd->acl_queries = query->next;
  	else
-@@ -641,7 +584,6 @@ hostapd_acl_recv_radius(struct radius_msg *msg, struct radius_msg *req,
- }
- #endif /* CONFIG_NO_RADIUS */
- 
--
- /**
-  * hostapd_acl_init: Initialize IEEE 802.11 ACL
-  * @hapd: hostapd BSS data
-@@ -654,7 +596,6 @@ int hostapd_acl_init(struct hostapd_data *hapd)
- 				   hostapd_acl_recv_radius, hapd))
- 		return -1;
- #endif /* CONFIG_NO_RADIUS */
--
- 	return 0;
- }
- 
 diff --git a/src/ap/ieee802_1x.c b/src/ap/ieee802_1x.c
-index 6a3cbf3..32484e4 100644
+index 9d0d5b0dd..8c50737bb 100644
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -704,6 +704,62 @@ static int get_ap_vlan(char *ifname)
+@@ -704,6 +704,64 @@ static int get_ap_vlan(char *ifname)
  }
  #endif /* FEATURE_SUPPORT_RADIUSGREYLIST */
  
++
 +/**
 + * add_comcast_radius_attributes - Add Comcast-specific vendor attributes to RADIUS message
 + * @hapd: hostapd BSS data structure
@@ -322,7 +281,7 @@ index 6a3cbf3..32484e4 100644
 +                          (u8 *)&ap_vlan, 4);
 +    radius_msg_add_comcast(msg, RADIUS_VENDOR_ATTR_COMCAST_AP_SNR,
 +                          &snr, 1);
-+    if (hapd->conf->connected_building_avp || hapd->conf->mdu) {
++   if (hapd->conf->connected_building_avp || hapd->conf->mdu) {
 +        radius_msg_add_comcast(msg, RADIUS_VENDOR_ATTR_COMCAST_CONNECTED_BUILDING,
 +                              managed_guest_val, strlen(managed_guest_val));
 +    }
@@ -337,10 +296,11 @@ index 6a3cbf3..32484e4 100644
 +	}
 +}
 +
++
  void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
  				   struct sta_info *sta,
  				   const u8 *eap, size_t len)
-@@ -868,42 +924,7 @@ void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
+@@ -868,42 +926,7 @@ void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
  #endif /* CONFIG_HS20 */
  #ifdef FEATURE_SUPPORT_RADIUSGREYLIST
  	if (hapd->conf->rdk_greylist  || hapd->conf->connected_building_avp) {
@@ -355,7 +315,7 @@ index 6a3cbf3..32484e4 100644
 -		snr = greylist_get_client_snr(hapd, txtaddr);
 -
 -		greylist_get_cmmac();
--		
+-
 -		ap_vlan = htonl(get_ap_vlan(hapd->conf->iface));
 -
 -		if (FAIL == ap_vlan) {
@@ -373,46 +333,46 @@ index 6a3cbf3..32484e4 100644
 -		radius_msg_add_comcast(
 -			msg, RADIUS_VENDOR_ATTR_COMCAST_AP_SNR,
 -			&snr, 1);
-- 		if(hapd->conf->connected_building_avp)
+-		if(hapd->conf->connected_building_avp)
 -		{
 -				radius_msg_add_comcast(
 -				msg, RADIUS_VENDOR_ATTR_COMCAST_CONNECTED_BUILDING,
--  				managed_guest_val,strlen(managed_guest_val));
--  		}
+-				managed_guest_val,strlen(managed_guest_val));
+-		}
 -
 +		add_comcast_radius_attributes(hapd, msg, sta);
  	}
  #endif /* FEATURE_SUPPORT_RADIUSGREYLIST */
  	if (radius_client_send(hapd->radius, msg, RADIUS_AUTH, sta->addr) < 0)
 diff --git a/src/ap/ieee802_1x.h b/src/ap/ieee802_1x.h
-index aaf0455..10469f8 100644
+index aaf0455bd..5a737731b 100644
 --- a/src/ap/ieee802_1x.h
 +++ b/src/ap/ieee802_1x.h
-@@ -61,6 +61,8 @@ int add_common_radius_attr(struct hostapd_data *hapd,
+@@ -61,6 +61,7 @@ int add_common_radius_attr(struct hostapd_data *hapd,
  			   struct hostapd_radius_attr *req_attr,
  			   struct sta_info *sta,
  			   struct radius_msg *msg);
-+void add_comcast_radius_attributes(struct hostapd_data *hapd, struct radius_msg *msg,
-+	           struct sta_info *sta);
++int add_comcast_radius_attr(struct hostapd_data *hapd, struct radius_msg *msg, struct sta_info *sta);
  int add_sqlite_radius_attr(struct hostapd_data *hapd, struct sta_info *sta,
  			   struct radius_msg *msg, int acct);
  void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 diff --git a/src/ap/wpa_auth.c b/src/ap/wpa_auth.c
-index a87d973..ba282b8 100644
+index bbe7900e2..9abcc34c1 100644
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
 @@ -3001,6 +3001,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
  	struct wpa_eapol_ie_parse kde;
  	int vlan_id = 0;
  	int owe_ptk_workaround = !!wpa_auth->conf.owe_ptk_workaround;
-+    int skip_radius_psk = 0;
++	int skip_radius_psk = 0;
  
  	SM_ENTRY_MA(WPA_PTK, PTKCALCNEGOTIATING, wpa_ptk);
  	sm->EAPOLKeyReceived = false;
-@@ -3009,6 +3010,26 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
+@@ -3008,6 +3009,26 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
+ 	os_memset(&PTK, 0, sizeof(PTK));
  
  	mic_len = wpa_mic_len(sm->wpa_key_mgmt, sm->pmk_len);
- 
++	
 +	if (sm->radius_psk_processed) {
 +		wpa_printf(MSG_DEBUG, "Resumed processing after RADIUS PSK - using local PSK");
 +		skip_radius_psk = 1;
@@ -432,10 +392,9 @@ index a87d973..ba282b8 100644
 +		sm->waiting_radius_psk = 1;
 +		return;
 +	}
-+
+ 
  	/* WPA with IEEE 802.1X: use the derived PMK from EAP
  	 * WPA-PSK: iterate through possible PSKs and select the one matching
- 	 * the packet */
 @@ -3078,7 +3099,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
  			break;
  	}
@@ -445,40 +404,17 @@ index a87d973..ba282b8 100644
  	    wpa_auth->conf.radius_psk && wpa_auth->cb->request_radius_psk &&
  	    !sm->waiting_radius_psk) {
  		wpa_printf(MSG_DEBUG, "No PSK available - ask RADIUS server");
-@@ -3875,8 +3896,9 @@ SM_STEP(WPA_PTK)
- 		break;
- 	case WPA_PTK_PTKSTART:
- 		if (sm->EAPOLKeyReceived && !sm->EAPOLKeyRequest &&
--		    sm->EAPOLKeyPairwise)
-+		    sm->EAPOLKeyPairwise){
- 			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
-+			}
- 		else if (sm->TimeoutCtr > conf->wpa_pairwise_update_count) {
- 			wpa_auth->dot11RSNA4WayHandshakeFailures++;
- 			wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_DEBUG,
-@@ -3892,8 +3914,9 @@ SM_STEP(WPA_PTK)
- 		if (sm->MICVerified)
- 			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING2);
- 		else if (sm->EAPOLKeyReceived && !sm->EAPOLKeyRequest &&
--			 sm->EAPOLKeyPairwise)
--			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
-+			 sm->EAPOLKeyPairwise) {
-+				SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
-+			 }
- 		else if (sm->TimeoutEvt)
- 			SM_ENTER(WPA_PTK, PTKSTART);
- 		break;
-@@ -5801,6 +5824,6 @@ void wpa_auth_sta_radius_psk_resp(struct wpa_state_machine *sm, bool success)
+@@ -5801,6 +5822,7 @@ void wpa_auth_sta_radius_psk_resp(struct wpa_state_machine *sm, bool success)
  	} else {
  		sm->Disconnect = true;
  	}
 -
--	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);
-+    sm->radius_psk_processed = 1;
-+	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);	
++    
++	sm->radius_psk_processed = 1;
+ 	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);
  }
 diff --git a/src/ap/wpa_auth.h b/src/ap/wpa_auth.h
-index 53def7a..f4993d4 100644
+index 53def7a61..67feb88f4 100644
 --- a/src/ap/wpa_auth.h
 +++ b/src/ap/wpa_auth.h
 @@ -277,7 +277,7 @@ struct wpa_auth_config {
@@ -486,12 +422,12 @@ index 53def7a..f4993d4 100644
  	 */
  	bool force_kdk_derivation;
 -
-+	bool mdu;
++    bool mdu;
  	bool radius_psk;
  };
  
 diff --git a/src/ap/wpa_auth_glue.c b/src/ap/wpa_auth_glue.c
-index 9976cf9..5e50901 100644
+index 9976cf955..44b86d64f 100644
 --- a/src/ap/wpa_auth_glue.c
 +++ b/src/ap/wpa_auth_glue.c
 @@ -218,7 +218,7 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
@@ -503,16 +439,8 @@ index 9976cf9..5e50901 100644
  	wconf->radius_psk = conf->wpa_psk_radius == PSK_RADIUS_DURING_4WAY_HS;
  	wconf->ieee80211w_rsno = conf->ieee80211w_rsno;
  	wconf->wpa_key_mgmt_rsno = conf->wpa_key_mgmt_rsno;
-@@ -1631,7 +1631,6 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
- 	};
- 	const u8 *wpa_ie;
- 	size_t wpa_ie_len;
--
- 	hostapd_wpa_auth_conf(hapd->conf, hapd->iconf, &_conf);
- 	_conf.msg_ctx = hapd->msg_ctx;
- 	if (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_EAPOL_TX_STATUS)
 diff --git a/src/ap/wpa_auth_i.h b/src/ap/wpa_auth_i.h
-index 17cb5a2..23b3025 100644
+index 17cb5a2e9..23b302599 100644
 --- a/src/ap/wpa_auth_i.h
 +++ b/src/ap/wpa_auth_i.h
 @@ -90,6 +90,7 @@ struct wpa_state_machine {
@@ -524,19 +452,18 @@ index 17cb5a2..23b3025 100644
  	unsigned int ft_completed:1;
  	unsigned int pmk_r1_name_valid:1;
 diff --git a/src/radius/radius.h b/src/radius/radius.h
-index 8ee3e03..b24c3dd 100644
+index 8ee3e0323..a0a3dd656 100644
 --- a/src/radius/radius.h
 +++ b/src/radius/radius.h
 @@ -242,7 +242,9 @@ enum {
  	RADIUS_VENDOR_ATTR_COMCAST_AP_SNR = 136,
  	RADIUS_VENDOR_ATTR_COMCAST_REPLY_MESSAGE = 137,
  	RADIUS_VENDOR_ATTR_COMCAST_AP_VLAN_32 = 141,
-+    RADIUS_VENDOR_ATTR_COMCAST_FIRMWARE_VERSION,
++	RADIUS_VENDOR_ATTR_COMCAST_FIRMWARE_VERSION,
  	RADIUS_VENDOR_ATTR_COMCAST_CONNECTED_BUILDING = 143,
-+    RADIUS_VENDOR_ATTR_COMCAST_MDU_QOS_AVP = 146,
++	RADIUS_VENDOR_ATTR_COMCAST_MDU_QOS_AVP = 146,
  };
  #endif /* FEATURE_SUPPORT_RADIUSGREYLIST */
  #ifdef _MSC_VER
 -- 
-2.25.1
-
+2.20.1

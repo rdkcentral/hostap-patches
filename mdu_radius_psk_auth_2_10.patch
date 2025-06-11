@@ -1,32 +1,19 @@
+From 2ae5e16e7e2d4d73fca63c625404b93bf8bdb976 Mon Sep 17 00:00:00 2001
+From: sjs889 <Srijeyarankesh_JS@comcast.com>
+Date: Wed, 11 Jun 2025 07:52:05 +0000
+Subject: [PATCH] Actual second needed commit
 
-From 1234567890abcdef1234567890abcdef12345678 Mon Sep 17 00:00:00 2001
-From: Srijeyarankesh J S <Srijeyarankesh_JS@comcast.com>
-Date: Wed, 11 Jun 2025 10:00:00 +0000
-Subject: [PATCH] Add MDU RADIUS PSK support with Comcast vendor attributes
-
-This patch adds Multi-Dwelling Unit (MDU) support for RADIUS PSK
-authentication with Comcast-specific vendor attributes including
-firmware version and QoS AVP handling.
-
-Changes include:
-- Add MDU configuration parameters (mdu, speed_tier, fw_version)
-- Implement Comcast vendor attribute support in RADIUS messages
-- Add RADIUS PSK processing flow for MDU environments
-- Refactor RADIUS attribute handling into reusable function
-- Add state tracking for RADIUS PSK processing
-
-Signed-off-by: Srijeyarankesh <Srijeyarankesh_JS@comcast.com>
 ---
- source/hostap-2.10/src/ap/ap_config.h         |   3 +
- source/hostap-2.10/src/ap/ieee802_11_auth.c   | 146 ++++++++++-----------
- source/hostap-2.10/src/ap/ieee802_1x.c        |  94 +++++++------
- source/hostap-2.10/src/ap/ieee802_1x.h        |   2 +
- source/hostap-2.10/src/ap/wpa_auth.c          |  33 ++++-
- source/hostap-2.10/src/ap/wpa_auth.h          |   2 +-
- source/hostap-2.10/src/ap/wpa_auth_glue.c     |   5 +-
- source/hostap-2.10/src/ap/wpa_auth_i.h        |   1 +
- source/hostap-2.10/src/radius/radius.h        |   2 +
- 9 files changed, 161 insertions(+), 127 deletions(-)
+ source/hostap-2.10/src/ap/ap_config.h       |   3 +
+ source/hostap-2.10/src/ap/ieee802_11_auth.c | 147 ++++++--------------
+ source/hostap-2.10/src/ap/ieee802_1x.c      |  93 ++++++++-----
+ source/hostap-2.10/src/ap/ieee802_1x.h      |   2 +
+ source/hostap-2.10/src/ap/wpa_auth.c        |  35 ++++-
+ source/hostap-2.10/src/ap/wpa_auth.h        |   2 +-
+ source/hostap-2.10/src/ap/wpa_auth_glue.c   |   3 +-
+ source/hostap-2.10/src/ap/wpa_auth_i.h      |   1 +
+ source/hostap-2.10/src/radius/radius.h      |   2 +
+ 9 files changed, 140 insertions(+), 148 deletions(-)
 
 diff --git a/source/hostap-2.10/src/ap/ap_config.h b/source/hostap-2.10/src/ap/ap_config.h
 index fa9966c..ff7d9dd 100644
@@ -411,7 +398,7 @@ index aaf0455..10469f8 100644
  			   struct radius_msg *msg, int acct);
  void ieee802_1x_encapsulate_radius(struct hostapd_data *hapd,
 diff --git a/source/hostap-2.10/src/ap/wpa_auth.c b/source/hostap-2.10/src/ap/wpa_auth.c
-index a87d973..0e0b7c8 100644
+index a87d973..ba282b8 100644
 --- a/source/hostap-2.10/src/ap/wpa_auth.c
 +++ b/source/hostap-2.10/src/ap/wpa_auth.c
 @@ -3001,6 +3001,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
@@ -463,9 +450,9 @@ index a87d973..0e0b7c8 100644
  	case WPA_PTK_PTKSTART:
  		if (sm->EAPOLKeyReceived && !sm->EAPOLKeyRequest &&
 -		    sm->EAPOLKeyPairwise)
-+		    sm->EAPOLKeyPairwise) {
++		    sm->EAPOLKeyPairwise){
  			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
-+		}
++			}
  		else if (sm->TimeoutCtr > conf->wpa_pairwise_update_count) {
  			wpa_auth->dot11RSNA4WayHandshakeFailures++;
  			wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_DEBUG,
@@ -474,32 +461,82 @@ index a87d973..0e0b7c8 100644
  			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING2);
  		else if (sm->EAPOLKeyReceived && !sm->EAPOLKeyRequest &&
 -			 sm->EAPOLKeyPairwise)
+-			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
 +			 sm->EAPOLKeyPairwise) {
- 			SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
-+		}
++				SM_ENTER(WPA_PTK, PTKCALCNEGOTIATING);
++			 }
  		else if (sm->TimeoutEvt)
  			SM_ENTER(WPA_PTK, PTKSTART);
  		break;
-@@ -5801,6 +5824,8 @@ void wpa_auth_sta_radius_psk_resp(struct wpa_state_machine *sm, bool success)
+@@ -5801,6 +5824,6 @@ void wpa_auth_sta_radius_psk_resp(struct wpa_state_machine *sm, bool success)
  	} else {
  		sm->Disconnect = true;
  	}
 -
 -	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);
-+	
-+	sm->radius_psk_processed = 1;
-+	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);
++    sm->radius_psk_processed = 1;
++	eloop_register_timeout(0, 0, wpa_sm_call_step, sm, NULL);	
  }
 diff --git a/source/hostap-2.10/src/ap/wpa_auth.h b/source/hostap-2.10/src/ap/wpa_auth.h
 index 53def7a..f4993d4 100644
 --- a/source/hostap-2.10/src/ap/wpa_auth.h
 +++ b/source/hostap-2.10/src/ap/wpa_auth.h
 @@ -277,7 +277,7 @@ struct wpa_auth_config {
- 	int fils_cache_id_set;
- 	u8 fils_cache_id[FILS_CACHE_ID_LEN];
- #endif /* CONFIG_FILS */
--	int connected_building_avp;
-+	int connected_building_avp, mdu, speed_tier;
+ 	 * PTK derivation regardless of advertised capabilities.
+ 	 */
+ 	bool force_kdk_derivation;
+-
++	bool mdu;
+ 	bool radius_psk;
  };
  
- typedef enum {
+diff --git a/source/hostap-2.10/src/ap/wpa_auth_glue.c b/source/hostap-2.10/src/ap/wpa_auth_glue.c
+index 9976cf9..5e50901 100644
+--- a/source/hostap-2.10/src/ap/wpa_auth_glue.c
++++ b/source/hostap-2.10/src/ap/wpa_auth_glue.c
+@@ -218,7 +218,7 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
+ 	wconf->force_kdk_derivation = conf->force_kdk_derivation;
+ #endif /* CONFIG_TESTING_OPTIONS */
+ #endif /* CONFIG_PASN */
+-
++    wconf->mdu = conf->mdu;
+ 	wconf->radius_psk = conf->wpa_psk_radius == PSK_RADIUS_DURING_4WAY_HS;
+ 	wconf->ieee80211w_rsno = conf->ieee80211w_rsno;
+ 	wconf->wpa_key_mgmt_rsno = conf->wpa_key_mgmt_rsno;
+@@ -1631,7 +1631,6 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
+ 	};
+ 	const u8 *wpa_ie;
+ 	size_t wpa_ie_len;
+-
+ 	hostapd_wpa_auth_conf(hapd->conf, hapd->iconf, &_conf);
+ 	_conf.msg_ctx = hapd->msg_ctx;
+ 	if (hapd->iface->drv_flags & WPA_DRIVER_FLAGS_EAPOL_TX_STATUS)
+diff --git a/source/hostap-2.10/src/ap/wpa_auth_i.h b/source/hostap-2.10/src/ap/wpa_auth_i.h
+index 17cb5a2..23b3025 100644
+--- a/source/hostap-2.10/src/ap/wpa_auth_i.h
++++ b/source/hostap-2.10/src/ap/wpa_auth_i.h
+@@ -90,6 +90,7 @@ struct wpa_state_machine {
+ 	unsigned int update_snonce:1;
+ 	unsigned int alt_snonce_valid:1;
+ 	unsigned int waiting_radius_psk:1;
++	unsigned int radius_psk_processed:1;
+ #ifdef CONFIG_IEEE80211R_AP
+ 	unsigned int ft_completed:1;
+ 	unsigned int pmk_r1_name_valid:1;
+diff --git a/source/hostap-2.10/src/radius/radius.h b/source/hostap-2.10/src/radius/radius.h
+index 8ee3e03..b24c3dd 100644
+--- a/source/hostap-2.10/src/radius/radius.h
++++ b/source/hostap-2.10/src/radius/radius.h
+@@ -242,7 +242,9 @@ enum {
+ 	RADIUS_VENDOR_ATTR_COMCAST_AP_SNR = 136,
+ 	RADIUS_VENDOR_ATTR_COMCAST_REPLY_MESSAGE = 137,
+ 	RADIUS_VENDOR_ATTR_COMCAST_AP_VLAN_32 = 141,
++    RADIUS_VENDOR_ATTR_COMCAST_FIRMWARE_VERSION,
+ 	RADIUS_VENDOR_ATTR_COMCAST_CONNECTED_BUILDING = 143,
++    RADIUS_VENDOR_ATTR_COMCAST_MDU_QOS_AVP = 146,
+ };
+ #endif /* FEATURE_SUPPORT_RADIUSGREYLIST */
+ #ifdef _MSC_VER
+-- 
+2.25.1
+

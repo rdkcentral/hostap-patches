@@ -4,15 +4,15 @@ Date: Wed, 11 Jun 2025 07:52:05 +0000
 Subject: [PATCH] Actual second needed commit
 
 ---
- source/hostap-2.10/src/ap/ap_config.h       |   3 +
- source/hostap-2.10/src/ap/ieee802_11_auth.c | 147 ++++++--------------
- source/hostap-2.10/src/ap/ieee802_1x.c      |  93 ++++++++-----
- source/hostap-2.10/src/ap/ieee802_1x.h      |   2 +
- source/hostap-2.10/src/ap/wpa_auth.c        |  35 ++++-
- source/hostap-2.10/src/ap/wpa_auth.h        |   2 +-
- source/hostap-2.10/src/ap/wpa_auth_glue.c   |   3 +-
- source/hostap-2.10/src/ap/wpa_auth_i.h      |   1 +
- source/hostap-2.10/src/radius/radius.h      |   2 +
+ src/ap/ap_config.h       |   3 +
+ src/ap/ieee802_11_auth.c | 147 ++++++--------------
+ src/ap/ieee802_1x.c      |  93 ++++++++-----
+ src/ap/ieee802_1x.h      |   2 +
+ src/ap/wpa_auth.c        |  35 ++++-
+ src/ap/wpa_auth.h        |   2 +-
+ src/ap/wpa_auth_glue.c   |   3 +-
+ src/ap/wpa_auth_i.h      |   1 +
+ src/radius/radius.h      |   2 +
  9 files changed, 140 insertions(+), 148 deletions(-)
 
 diff --git a/src/ap/ap_config.h b/src/ap/ap_config.h

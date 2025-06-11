@@ -17,8 +17,8 @@ Subject: [PATCH] Actual second needed commit
 
 diff --git a/source/hostap-2.10/src/ap/ap_config.h b/source/hostap-2.10/src/ap/ap_config.h
 index fa9966c..ff7d9dd 100644
---- a/source/hostap-2.10/src/ap/ap_config.h
-+++ b/source/hostap-2.10/src/ap/ap_config.h
+--- a/src/ap/ap_config.h
++++ b/src/ap/ap_config.h
 @@ -495,6 +495,7 @@ struct hostapd_bss_config {
  	char *manufacturer;
  	char *model_name;
@@ -38,8 +38,8 @@ index fa9966c..ff7d9dd 100644
  #endif /* CONFIG_RADIUS_TEST */
 diff --git a/source/hostap-2.10/src/ap/ieee802_11_auth.c b/source/hostap-2.10/src/ap/ieee802_11_auth.c
 index 4277d82..d38721d 100644
---- a/source/hostap-2.10/src/ap/ieee802_11_auth.c
-+++ b/source/hostap-2.10/src/ap/ieee802_11_auth.c
+--- a/src/ap/ieee802_11_auth.c
++++ b/src/ap/ieee802_11_auth.c
 @@ -117,7 +117,7 @@ static int hostapd_radius_acl_query(struct hostapd_data *hapd, const u8 *addr,
  {
  	struct radius_msg *msg;
@@ -275,8 +275,8 @@ index 4277d82..d38721d 100644
  
 diff --git a/source/hostap-2.10/src/ap/ieee802_1x.c b/source/hostap-2.10/src/ap/ieee802_1x.c
 index 6a3cbf3..32484e4 100644
---- a/source/hostap-2.10/src/ap/ieee802_1x.c
-+++ b/source/hostap-2.10/src/ap/ieee802_1x.c
+--- a/src/ap/ieee802_1x.c
++++ b/src/ap/ieee802_1x.c
 @@ -704,6 +704,62 @@ static int get_ap_vlan(char *ifname)
  }
  #endif /* FEATURE_SUPPORT_RADIUSGREYLIST */
@@ -386,8 +386,8 @@ index 6a3cbf3..32484e4 100644
  	if (radius_client_send(hapd->radius, msg, RADIUS_AUTH, sta->addr) < 0)
 diff --git a/source/hostap-2.10/src/ap/ieee802_1x.h b/source/hostap-2.10/src/ap/ieee802_1x.h
 index aaf0455..10469f8 100644
---- a/source/hostap-2.10/src/ap/ieee802_1x.h
-+++ b/source/hostap-2.10/src/ap/ieee802_1x.h
+--- a/src/ap/ieee802_1x.h
++++ b/src/ap/ieee802_1x.h
 @@ -61,6 +61,8 @@ int add_common_radius_attr(struct hostapd_data *hapd,
  			   struct hostapd_radius_attr *req_attr,
  			   struct sta_info *sta,
@@ -479,8 +479,8 @@ index a87d973..ba282b8 100644
  }
 diff --git a/source/hostap-2.10/src/ap/wpa_auth.h b/source/hostap-2.10/src/ap/wpa_auth.h
 index 53def7a..f4993d4 100644
---- a/source/hostap-2.10/src/ap/wpa_auth.h
-+++ b/source/hostap-2.10/src/ap/wpa_auth.h
+--- a/src/ap/wpa_auth.h
++++ b/src/ap/wpa_auth.h
 @@ -277,7 +277,7 @@ struct wpa_auth_config {
  	 * PTK derivation regardless of advertised capabilities.
  	 */
